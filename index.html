@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GBA Style Action RPG</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Press Start 2P', cursive; /* A pixel-art style font would be great */
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 480px; /* Typical GBA resolution is 240x160, scaling up for modern screens */
+            height: 320px;
+            background: #333;
+            border: 8px solid #555;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5); /* A subtle glow like a powered-on GBA */
+            image-rendering: pixelated; /* Crucial for that retro look */
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #000; /* Game background will be drawn on canvas */
+        }
+
+        #on-screen-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 10;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+            gap: 2px;
+            width: 120px;
+            height: 120px;
+        }
+
+        .dpad-button {
+            background-color: #666;
+            border: 2px solid #333;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1em;
+            color: #eee;
+            user-select: none;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+        }
+
+        .dpad-button:active {
+            background-color: #999;
+        }
+
+        /* Specific D-Pad layout */
+        .dpad-up { grid-area: 1 / 2 / 2 / 3; }
+        .dpad-left { grid-area: 2 / 1 / 3 / 2; }
+        .dpad-center { grid-area: 2 / 2 / 3 / 3; background-color: transparent; border: none;} /* Center is empty */
+        .dpad-right { grid-area: 2 / 3 / 3 / 4; }
+        .dpad-down { grid-area: 3 / 2 / 4 / 3; }
+
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-right: 20px;
+        }
+
+        .action-button {
+            width: 60px;
+            height: 60px;
+            background-color: #007bff; /* Blue for A */
+            border: 2px solid #0056b3;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #fff;
+            user-select: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.1s ease;
+        }
+
+        .action-button.b-button {
+            background-color: #dc3545; /* Red for B */
+            border-color: #b02a37;
+        }
+
+        .action-button:active {
+            background-color: #0056b3; /* Darken on press */
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+            transform: translateY(2px);
+        }
+        .action-button.b-button:active {
+            background-color: #b02a37;
+        }
+
+        /* Optional: Import a pixel font for the GBA feel */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="on-screen-controls">
+            <div class="dpad">
+                <div class="dpad-button dpad-up" data-direction="up">▲</div>
+                <div class="dpad-button dpad-left" data-direction="left">◀</div>
+                <div class="dpad-button dpad-center"></div>
+                <div class="dpad-button dpad-right" data-direction="right">▶</div>
+                <div class="dpad-button dpad-down" data-direction="down">▼</div>
+            </div>
+            <div class="action-buttons">
+                <div class="action-button b-button" data-action="B">B</div>
+                <div class="action-button" data-action="A">A</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set the canvas resolution (GBA native is 240x160)
+        // We render at a higher resolution and let CSS scale it for sharper pixel art
+        canvas.width = 240;
+        canvas.height = 160;
+
+        let player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 16,
+            speed: 2,
+            color: 'red'
+        };
+
+        let keysPressed = {};
+        let activeControls = {}; // To track on-screen button presses
+
+        // --- Game Loop ---
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            // Player movement based on keyboard
+            if (keysPressed['ArrowUp'] || activeControls['up']) player.y -= player.speed;
+            if (keysPressed['ArrowDown'] || activeControls['down']) player.y += player.speed;
+            if (keysPressed['ArrowLeft'] || activeControls['left']) player.x -= player.speed;
+            if (keysPressed['ArrowRight'] || activeControls['right']) player.x += player.speed;
+
+            // Simple boundary checks
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
+            if (player.y < 0) player.y = 0;
+            if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
+
+            // TODO: Add enemy movement, collision, attack logic here
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+            // Draw player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+
+            // TODO: Draw enemies, environment, UI elements
+        }
+
+        // --- Keyboard Input Handlers ---
+        document.addEventListener('keydown', (e) => {
+            keysPressed[e.key] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keysPressed[e.key] = false;
+        });
+
+        // --- On-screen Control Handlers ---
+        const dpadButtons = document.querySelectorAll('.dpad-button');
+        const actionButtons = document.querySelectorAll('.action-button');
+
+        dpadButtons.forEach(button => {
+            button.addEventListener('pointerdown', (e) => {
+                e.preventDefault(); // Prevent text selection/dragging
+                const direction = button.dataset.direction;
+                if (direction) {
+                    activeControls[direction] = true;
+                }
+            });
+            button.addEventListener('pointerup', (e) => {
+                e.preventDefault();
+                const direction = button.dataset.direction;
+                if (direction) {
+                    activeControls[direction] = false;
+                }
+            });
+            // Also handle pointerleave in case finger slides off
+            button.addEventListener('pointerleave', (e) => {
+                const direction = button.dataset.direction;
+                if (direction) {
+                    activeControls[direction] = false;
+                }
+            });
+        });
+
+        actionButtons.forEach(button => {
+            button.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                const action = button.dataset.action;
+                console.log(`${action} button pressed!`); // For debugging
+                // TODO: Trigger game actions (attack, use item)
+            });
+            button.addEventListener('pointerup', (e) => {
+                e.preventDefault();
+                // Release action, if needed (e.g., charge attacks)
+            });
+        });
+
+
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+  </html>
+  
