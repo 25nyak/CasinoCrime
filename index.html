@@ -3,61 +3,67 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GBA Style Action RPG</title>
+    <title>GBA Style Action RPG - Kulture Kards Kasino</title>
     <style>
+        /* Base styles for the entire page */
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Press Start 2P', cursive; /* A pixel-art style font would be great */
-            background: #000;
+            font-family: 'Press Start 2P', cursive; /* Retro pixel font */
+            background: #000; /* Black background */
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
+            min-height: 100vh; /* Full viewport height */
+            overflow: hidden; /* Prevent scrolling */
         }
 
+        /* Container mimicking a GBA console screen */
         #game-container {
             position: relative;
-            width: 480px; /* Scaling up the original 240x160 GBA resolution */
-            height: 320px;
-            background: #333;
-            border: 8px solid #555;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5); /* A subtle glow for the GBA screen */
-            image-rendering: pixelated; /* Essential for sharp pixel art */
-            overflow: hidden;
-            display: flex; /* Use flexbox to center the canvas */
-            justify-content: center;
-            align-items: center;
+            width: 480px; /* Scaled GBA width (240*2) */
+            height: 320px; /* Scaled GBA height (160*2) */
+            background: #333; /* Dark gray border behind screen */
+            border: 8px solid #555; /* Console casing look */
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5); /* Green glow for "powered on" */
+            image-rendering: pixelated; /* Essential for sharp pixel art scaling */
+            overflow: hidden; /* Hide anything outside the game area */
         }
 
+        /* The canvas element where all game graphics are drawn */
         canvas {
             display: block;
             width: 100%;
             height: 100%;
-            background-color: #000; /* Default background for the game area */
+            background-color: #1a1a1a; /* Default game background color */
         }
 
+        /* Container for all on-screen control buttons */
         #on-screen-controls {
             position: absolute;
             bottom: 10px;
             left: 10px;
             right: 10px;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            z-index: 10; /* Ensure controls are above the canvas */
+            justify-content: space-between; /* Space D-pad and action buttons */
+            align-items: flex-end; /* Align to the bottom */
+            z-index: 10; /* Ensure controls are on top of the canvas */
+            transform: scale(0.9); /* Slightly shrink controls for better fit on small screens */
+            transform-origin: bottom center;
         }
 
+        /* D-Pad specific styling */
         .dpad {
             display: grid;
-            grid-template-columns: repeat(3, 40px);
-            grid-template-rows: repeat(3, 40px);
-            gap: 2px;
+            grid-template-columns: repeat(3, 40px); /* 3 columns of 40px each */
+            grid-template-rows: repeat(3, 40px); /* 3 rows of 40px each */
+            gap: 2px; /* Small gap between buttons */
             width: 120px;
             height: 120px;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.5)); /* Adds depth */
         }
 
+        /* Styling for individual D-pad buttons */
         .dpad-button {
             background-color: #666;
             border: 2px solid #333;
@@ -67,37 +73,45 @@
             align-items: center;
             font-size: 1em;
             color: #eee;
-            user-select: none;
+            user-select: none; /* Prevent text selection */
             cursor: pointer;
-            transition: background-color 0.1s ease;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+            transition: background-color 0.1s ease, box-shadow 0.1s ease;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.4); /* Inner shadow for depth */
+            font-family: 'Press Start 2P', cursive;
         }
 
         .dpad-button:active {
-            background-color: #999;
+            background-color: #999; /* Lighten when pressed */
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+            transform: translateY(1px); /* Slight press effect */
         }
 
-        /* Specific D-Pad layout using grid areas */
-        .dpad-up { grid-area: 1 / 2 / 2 / 3; }
-        .dpad-left { grid-area: 2 / 1 / 3 / 2; }
-        .dpad-center { grid-area: 2 / 2 / 3 / 3; background-color: transparent; border: none;} /* Center is empty */
-        .dpad-right { grid-area: 2 / 3 / 3 / 4; }
-        .dpad-down { grid-area: 3 / 2 / 4 / 3; }
+        /* Positioning of D-pad buttons within the grid */
+        .dpad-up { grid-area: 1 / 2 / 2 / 3; } /* Row 1, Col 2 */
+        .dpad-left { grid-area: 2 / 1 / 3 / 2; } /* Row 2, Col 1 */
+        .dpad-center { /* Empty center square */
+            grid-area: 2 / 2 / 3 / 3;
+            background-color: transparent;
+            border: none;
+        }
+        .dpad-right { grid-area: 2 / 3 / 3 / 4; } /* Row 2, Col 3 */
+        .dpad-down { grid-area: 3 / 2 / 4 / 3; } /* Row 3, Col 2 */
 
-
+        /* Container for A and B action buttons */
         .action-buttons {
             display: flex;
-            gap: 15px;
+            gap: 15px; /* Space between A and B */
             margin-right: 20px;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.5)); /* Adds depth */
         }
 
+        /* Styling for individual action buttons */
         .action-button {
             width: 60px;
             height: 60px;
             background-color: #007bff; /* Blue for A button */
             border: 2px solid #0056b3;
-            border-radius: 50%;
+            border-radius: 50%; /* Make them circular */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -106,8 +120,9 @@
             color: #fff;
             user-select: none;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: background-color 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Outer shadow for lifted look */
+            transition: background-color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease;
+            font-family: 'Press Start 2P', cursive;
         }
 
         .action-button.b-button {
@@ -124,7 +139,7 @@
             background-color: #b02a37; /* Darken B on press */
         }
 
-        /* Optional: Import a pixel font for the GBA feel */
+        /* Google Fonts import for pixel art font */
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     </style>
 </head>
@@ -146,82 +161,103 @@
     </div>
 
     <script>
-        // Get the canvas element and its 2D rendering context
+        // Get the canvas element and its 2D drawing context
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Set the internal resolution of the canvas to mimic GBA (240x160)
-        // The CSS will then scale this up to fit the #game-container, creating the pixel effect
+        // Set the internal resolution of the canvas to mimic GBA (240x160 pixels)
+        // CSS scales this up for a crisp pixelated look on modern screens.
         canvas.width = 240;
         canvas.height = 160;
 
         // --- Game Variables ---
+        // Player properties (a simple red square for now)
         let player = {
-            x: canvas.width / 2 - 8, // Center the player initially
-            y: canvas.height / 2 - 8,
+            x: canvas.width / 2 - 8, // Initial X position, centered
+            y: canvas.height / 2 - 8, // Initial Y position, centered
             size: 16, // Player is a 16x16 pixel square
-            speed: 1, // Movement speed in pixels per frame
-            color: 'red', // Simple color for now, will be replaced by sprites
-            isAttacking: false,
-            attackTimer: 0,
-            maxAttackTime: 20 // Frames for attack animation/cooldown
+            speed: 60, // Movement speed in pixels per second
+            color: 'red' // Player color
         };
 
-        // Object to track keyboard keys currently pressed
+        // Simple 'enemy' properties (a green square for now)
+        let enemy = {
+            x: 50,
+            y: 50,
+            size: 16,
+            color: 'green',
+            health: 100
+        };
+
+        // --- Input Tracking ---
+        // Object to store which keyboard keys are currently pressed
         let keysPressed = {};
-        // Object to track which on-screen control buttons are active
+        // Object to store which on-screen control buttons are actively being held down
         let activeControls = {};
 
-        // --- Game Loop Function ---
-        function gameLoop() {
-            update(); // Update game state (positions, logic)
-            draw();   // Draw everything on the canvas
-            requestAnimationFrame(gameLoop); // Request next frame for smooth animation
+        // --- Game Loop ---
+        // 'lastTime' is used to calculate 'deltaTime' for frame-rate independent movement
+        let lastTime = 0;
+
+        function gameLoop(currentTime) {
+            // Calculate time passed since the last frame (in seconds)
+            if (!lastTime) lastTime = currentTime;
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            update(deltaTime); // Update game logic
+            draw();   // Redraw game elements
+
+            // Request the browser to call gameLoop again for the next frame
+            requestAnimationFrame(gameLoop);
         }
 
-        // --- Update Game State ---
-        function update() {
-            // Player movement based on keyboard and on-screen controls
-            let dx = 0;
-            let dy = 0;
+        // --- Update Game Logic ---
+        function update(deltaTime) {
+            // Player Movement Logic
+            let dx = 0; // Change in X
+            let dy = 0; // Change in Y
 
-            if (keysPressed['ArrowUp'] || activeControls['up']) dy -= player.speed;
-            if (keysPressed['ArrowDown'] || activeControls['down']) dy += player.speed;
-            if (keysPressed['ArrowLeft'] || activeControls['left']) dx -= player.speed;
-            if (keysPressed['ArrowRight'] || activeControls['right']) dx += player.speed;
+            // Check keyboard input
+            if (keysPressed['ArrowUp'] || activeControls['up']) dy -= 1;
+            if (keysPressed['ArrowDown'] || activeControls['down']) dy += 1;
+            if (keysPressed['ArrowLeft'] || activeControls['left']) dx -= 1;
+            if (keysPressed['ArrowRight'] || activeControls['right']) dx += 1;
 
-            // Apply movement (can add diagonal speed adjustment later if desired)
-            player.x += dx;
-            player.y += dy;
-
-            // Keep player within canvas boundaries
-            if (player.x < 0) player.x = 0;
-            if (player.x + player.size > canvas.width) player.x = canvas.width - player.size;
-            if (player.y < 0) player.y = 0;
-            if (player.y + player.size > canvas.height) player.y = canvas.height - player.size;
-
-            // Handle attack state
-            if (player.isAttacking) {
-                player.attackTimer--;
-                if (player.attackTimer <= 0) {
-                    player.isAttacking = false;
-                }
+            // Normalize diagonal movement speed
+            // This prevents the player from moving faster diagonally
+            if (dx !== 0 && dy !== 0) {
+                const length = Math.sqrt(dx * dx + dy * dy);
+                dx /= length;
+                dy /= length;
             }
 
-            // TODO: Add more game logic here:
-            // - Enemy movement and AI
-            // - Collision detection (player vs. enemy, player vs. environment)
-            // - Player health and damage
-            // - Item collection
-            // - Level progression
+            // Apply movement based on speed and delta time
+            player.x += dx * player.speed * deltaTime;
+            player.y += dy * player.speed * deltaTime;
+
+            // Keep player within canvas boundaries
+            player.x = Math.max(0, Math.min(player.x, canvas.width - player.size));
+            player.y = Math.max(0, Math.min(player.y, canvas.height - player.size));
+
+            // --- Dynasty Warriors / Crime Management Placeholders ---
+            // This is where more complex game logic would go:
+            // - Enemy AI: How enemies move and attack (e.g., chasing player, patrolling)
+            // - Collision Detection: Check if player hits enemies, walls, items.
+            // - Attack System: If player presses 'A', define an attack hitbox and check for enemy collisions.
+            //   For Dynasty Warriors style, attacks would likely hit multiple enemies in an area.
+            // - NPCs & Dialogue: Logic for interacting with other characters.
+            // - Quests & Reputation: Track player's progress and standing.
+            // - Inventory/Items: Manage what the player carries.
+            // - World Loading: If your map is larger than the screen, you'd load/unload map sections here.
         }
 
         // --- Draw Game Elements ---
         function draw() {
-            // Clear the entire canvas before drawing new frame
+            // Clear the entire canvas for the new frame
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw game background (optional, could be an image)
+            // Draw game background (can be a tilemap or large image later)
             ctx.fillStyle = '#1a1a1a'; // Dark gray background
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -229,29 +265,44 @@
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.size, player.size);
 
-            // Example: Draw a simple attack effect if attacking
-            if (player.isAttacking) {
-                ctx.fillStyle = 'rgba(255, 255, 0, 0.7)'; // Yellowish, semi-transparent
-                // Draw a square next to the player, simulating an attack swing
-                ctx.fillRect(player.x + player.size, player.y, player.size / 2, player.size);
+            // Draw enemy (just a green square for now)
+            if (enemy.health > 0) { // Only draw if enemy is alive
+                ctx.fillStyle = enemy.color;
+                ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
             }
 
-            // TODO: Draw enemies, items, environmental elements, UI overlays (health, score)
-            // Remember to use ctx.drawImage() for sprites!
+
+            // --- UI Overlay (for debugging or basic info) ---
+            ctx.fillStyle = 'white';
+            ctx.font = '6px "Press Start 2P"'; // Smaller font for pixel feel
+            ctx.textAlign = 'left';
+            ctx.fillText(`Player X: ${Math.round(player.x)}, Y: ${Math.round(player.y)}`, 2, 8);
+            ctx.fillText(`Enemy Health: ${enemy.health}`, 2, 16);
+
+            // TODO: Draw sprites/images instead of colored rectangles:
+            // ctx.drawImage(playerSprite, player.x, player.y, player.size, player.size);
+            // You'd need to load images first (using new Image() objects)
         }
 
         // --- Event Listeners for Keyboard Input ---
         document.addEventListener('keydown', (e) => {
             keysPressed[e.key] = true;
-            // Example: Trigger action with 'Z' for A button, 'X' for B button
+            // Example: Key 'Z' for A button (attack)
             if (e.key === 'z' || e.key === 'Z') {
-                if (!player.isAttacking) {
-                    player.isAttacking = true;
-                    player.attackTimer = player.maxAttackTime;
-                    console.log("Player attacks!"); // Debugging output
+                console.log("Keyboard 'A' (Z key) pressed - Initiate attack!");
+                // TODO: Add player attack logic here
+                // For simplicity, let's just damage the enemy once per press
+                if (enemy.health > 0) {
+                    enemy.health -= 20; // Reduce enemy health
+                    if (enemy.health < 0) enemy.health = 0;
+                    console.log("Enemy hit! New health: " + enemy.health);
                 }
             }
-            // You can add more key bindings here for other actions
+            // Example: Key 'X' for B button (interact/special)
+            if (e.key === 'x' || e.key === 'X') {
+                console.log("Keyboard 'B' (X key) pressed - Interact/Special!");
+                // TODO: Add interaction logic (e.g., talk to NPC, use item)
+            }
         });
 
         document.addEventListener('keyup', (e) => {
@@ -264,23 +315,23 @@
 
         // Handle D-Pad presses
         dpadButtons.forEach(button => {
+            // 'pointerdown' handles both mouse click and touch start
             button.addEventListener('pointerdown', (e) => {
-                e.preventDefault(); // Prevent default browser actions like text selection
+                e.preventDefault(); // Prevent default browser actions (like text selection)
                 const direction = button.dataset.direction;
                 if (direction) {
                     activeControls[direction] = true;
-                    // Add a visual feedback class if you want, e.g., button.classList.add('active');
                 }
             });
+            // 'pointerup' handles both mouse release and touch end
             button.addEventListener('pointerup', (e) => {
                 e.preventDefault();
                 const direction = button.dataset.direction;
                 if (direction) {
                     activeControls[direction] = false;
-                    // button.classList.remove('active');
                 }
             });
-            // Crucial for mobile: if a finger slides off the button while still down
+            // 'pointerleave' is important for touch, if finger slides off button
             button.addEventListener('pointerleave', (e) => {
                 const direction = button.dataset.direction;
                 if (direction) {
@@ -295,24 +346,27 @@
                 e.preventDefault();
                 const action = button.dataset.action;
                 if (action === 'A') {
-                    if (!player.isAttacking) {
-                        player.isAttacking = true;
-                        player.attackTimer = player.maxAttackTime;
-                        console.log("A button (Attack) pressed!");
+                    console.log("On-screen 'A' button pressed - Initiate attack!");
+                    // TODO: Add player attack logic here
+                    if (enemy.health > 0) {
+                        enemy.health -= 20; // Reduce enemy health
+                        if (enemy.health < 0) enemy.health = 0;
+                        console.log("Enemy hit! New health: " + enemy.health);
                     }
                 } else if (action === 'B') {
-                    console.log("B button (Interact/Special) pressed!");
-                    // TODO: Implement special actions or interactions
+                    console.log("On-screen 'B' button pressed - Interact/Special!");
+                    // TODO: Add interaction logic
                 }
             });
-            // You might not need pointerup for instant actions, but good for charge/hold
+            // pointerup can be used for actions that require holding a button, or for releasing states.
             button.addEventListener('pointerup', (e) => {
                 e.preventDefault();
             });
         });
 
-        // Start the main game loop when the page loads
-        gameLoop();
+        // --- Start the Game ---
+        // Begin the main game loop when the script loads
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
