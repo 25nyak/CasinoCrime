@@ -2,112 +2,144 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chinatown RPG Extended</title>
   <style>
-    body { background:#000; margin:0; overflow:hidden; font-family:'Press Start 2P',cursive }
-    #game-container { margin:auto; width:640px;height:384px; border:8px solid #555; image-rendering:pixelated; }
-    canvas { display:block; width:100%; height:100%; background:#222; }
+    body {
+      background: #000;
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Press Start 2P', cursive;
+    }
+    #game-container {
+      margin: auto;
+      width: 640px;
+      height: 384px;
+      border: 8px solid #555;
+      image-rendering: pixelated;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #222;
+    }
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
   </style>
 </head>
 <body>
-  <div id="game-container"><canvas id="game"></canvas></div>
+  <div id="game-container">
+    <canvas id="game"></canvas>
+  </div>
+
   <script>
-  const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
-  canvas.width = 640; canvas.height = 384;
+    const canvas = document.getElementById('game'),
+          ctx = canvas.getContext('2d');
+    canvas.width = 640;
+    canvas.height = 384;
 
-  const TILE = 32, VIEW_W = canvas.width, VIEW_H = canvas.height;
+    const TILE = 32, VIEW_W = canvas.width, VIEW_H = canvas.height;
 
-  let mapData, tileset;
-  const playerImg = new Image(), tilesImg = new Image();
-  playerImg.src = 'assets/player.png';
-  tilesImg.src = 'assets/tileset.png';
+    const playerImg = new Image(), tilesImg = new Image();
+    playerImg.src = 'assets/player.png'; // Placeholder for mafia chibi player sprite
+    tilesImg.src = 'assets/tileset.png'; // Placeholder for tileset (casino, office, city)
 
-  const player = { x:100, y:100, w:32, h:32, speed:120, dir:'down', frame:0, health:100 };
-  const camera = { x:0, y:0 };
+    const player = { x: 100, y: 100, w: 32, h: 32, speed: 120, dir: 'down', frame: 0, health: 100 };
+    const camera = { x: 0, y: 0 };
 
-  const keys = {}, inventory={keys:0};
-  let bullets=[], npcs=[], dialogue=null;
+    const keys = {}, inventory = { keys: 0 };
+    let bullets = [], npcs = [], dialogue = null;
+    let mapData;
 
-  async function loadMap(){
-    const resp = await fetch('data/map.json');
-    mapData = await resp.json();
-    // Example NPCs:
-    npcs.push({x:200,y:150,w:32,h:32,dialogue:["Hello traveller!","Bring me a key!"]});
-  }
-
-  function gameLoop(t){ update((t-prev)/1000); draw(); prev=t; requestAnimationFrame(gameLoop); }
-  let prev=0;
-
-  function update(dt){
-    if(dialogue){ return; } // freeze movement when in dialogue
-
-    let dx=0, dy=0;
-    if(keys.ArrowUp) { dy=-1; player.dir='up' }
-    if(keys.ArrowDown){ dy= 1; player.dir='down' }
-    if(keys.ArrowLeft){ dx=-1; player.dir='left' }
-    if(keys.ArrowRight){ dx= 1; player.dir='right' }
-
-    if(dx||dy){
-      const len = Math.hypot(dx,dy);
-      player.x += dx/len*player.speed*dt;
-      player.y += dy/len*player.speed*dt;
+    async function loadMap() {
+      const resp = await fetch('data/map.json');
+      mapData = await resp.json();
+      
+      // Example NPCs using chibi mafia characters
+      npcs.push({ x: 200, y: 150, w: 32, h: 32, dialogue: ["You owe the boss.", "Better pay up."] });
+      npcs.push({ x: 250, y: 100, w: 32, h: 32, dialogue: ["Fancy a game of blackjack?"] });
     }
 
-    camera.x = player.x - VIEW_W/2 + player.w/2;
-    camera.y = player.y - VIEW_H/2 + player.h/2;
+    function gameLoop(t) {
+      update((t - prev) / 1000);
+      draw();
+      prev = t;
+      requestAnimationFrame(gameLoop);
+    }
+    let prev = 0;
 
-    // Interaction:
-    if(keys.x||keys.X){
-      npcs.forEach(n=>{
-        if(Math.abs(player.x-n.x)<32 && Math.abs(player.y-n.y)<32 && !dialogue){
-          dialogue = { npc:n, idx:0 };
-        }
+    function update(dt) {
+      if (dialogue) return;
+
+      let dx = 0, dy = 0;
+      if (keys.ArrowUp) { dy = -1; player.dir = 'up'; }
+      if (keys.ArrowDown) { dy = 1; player.dir = 'down'; }
+      if (keys.ArrowLeft) { dx = -1; player.dir = 'left'; }
+      if (keys.ArrowRight) { dx = 1; player.dir = 'right'; }
+
+      if (dx || dy) {
+        const len = Math.hypot(dx, dy);
+        player.x += dx / len * player.speed * dt;
+        player.y += dy / len * player.speed * dt;
+      }
+
+      camera.x = player.x - VIEW_W / 2 + player.w / 2;
+      camera.y = player.y - VIEW_H / 2 + player.h / 2;
+
+      // NPC interaction
+      if (keys.x || keys.X) {
+        npcs.forEach(n => {
+          if (Math.abs(player.x - n.x) < 32 && Math.abs(player.y - n.y) < 32 && !dialogue) {
+            dialogue = { npc: n, idx: 0 };
+          }
+        });
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+      if (!mapData) return;
+
+      const cols = mapData.width, rows = mapData.height;
+      mapData.layers[0].data.forEach((g, xi) => {
+        const tile = g;
+        if (tile < 0) return;
+        const x = xi % cols, y = Math.floor(xi / cols);
+        const sx = (tile % 8) * TILE, sy = Math.floor(tile / 8) * TILE;
+        ctx.drawImage(tilesImg, sx, sy, TILE, TILE,
+          x * TILE - camera.x, y * TILE - camera.y, TILE, TILE);
       });
-    }
-  }
 
-  function draw(){
-    ctx.clearRect(0,0,VIEW_W,VIEW_H);
-    if(!mapData) return;
-    const cols = mapData.width, rows = mapData.height;
-    mapData.layers[0].data.forEach((g,xi)=>{
-      const tile = g;
-      if(tile<0) return;
-      const x = xi%cols, y = Math.floor(xi/cols);
-      const sx = (tile%8)*TILE, sy = Math.floor(tile/8)*TILE;
-      ctx.drawImage(tilesImg, sx, sy, TILE, TILE,
-        x*TILE-camera.x, y*TILE-camera.y, TILE, TILE);
+      npcs.forEach(n => {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(n.x - camera.x, n.y - camera.y, n.w, n.h);
+      });
+
+      ctx.drawImage(playerImg,
+        player.x - camera.x, player.y - camera.y, player.w, player.h);
+
+      ctx.fillStyle = 'yellow';
+      ctx.fillText(`Keys: ${inventory.keys}`, 10, 20);
+
+      if (dialogue) {
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(0, VIEW_H - 100, VIEW_W, 100);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(dialogue.npc.dialogue[dialogue.idx], 20, VIEW_H - 60);
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (dialogue && (e.key === 'z' || e.key === 'Z')) {
+        dialogue.idx++;
+        if (dialogue.idx >= dialogue.npc.dialogue.length) dialogue = null;
+      }
     });
 
-    npcs.forEach(n=>{
-      ctx.fillStyle='blue';
-      ctx.fillRect(n.x-camera.x,n.y-camera.y,n.w,n.h);
-    });
+    document.addEventListener('keyup', e => keys[e.key] = false);
 
-    ctx.drawImage(playerImg,
-      player.x-camera.x, player.y-camera.y,player.w,player.h);
-
-    ctx.fillStyle='yellow';
-    ctx.fillText(`Keys: ${inventory.keys}`,10,20);
-
-    if(dialogue){
-      ctx.fillStyle='rgba(0,0,0,0.8)'; ctx.fillRect(0,VIEW_H-100,VIEW_W,100);
-      ctx.fillStyle='#fff'; ctx.fillText(dialogue.npc.dialogue[dialogue.idx],20,VIEW_H-60);
-    }
-  }
-
-  document.addEventListener('keydown',e=>{
-    keys[e.key]=true;
-    if(dialogue&& (e.key==='z'||e.key==='Z')){
-      dialogue.idx++;
-      if(dialogue.idx>=dialogue.npc.dialogue.length) dialogue=null;
-    }
-  });
-  document.addEventListener('keyup',e=>keys[e.key]=false);
-
-  loadMap().then(()=>requestAnimationFrame(gameLoop));
+    loadMap().then(() => requestAnimationFrame(gameLoop));
   </script>
 </body>
 </html>
